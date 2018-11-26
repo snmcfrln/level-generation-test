@@ -7,6 +7,8 @@ public class BSPGeneration : MonoBehaviour {
     public int minRoomSize, maxRoomSize;
 
     public static List<Rect> sectionList = new List<Rect>();
+    public static List<Rect> corridorList = new List<Rect>();
+
 
 
     public GameObject floorTile;
@@ -17,12 +19,12 @@ public class BSPGeneration : MonoBehaviour {
     private void Start()
     {
         Section initialSection = new Section(new Rect(0, 0, rows, columns));
-        CreateBSP(initialSection);
+        Partition(initialSection);
         initialSection.CreateRoom();
 
         floorPositions = new GameObject[rows, columns];
 
-        //DrawRooms(initialSection);
+       // DrawRooms(initialSection);
 
     }
 
@@ -32,11 +34,15 @@ public class BSPGeneration : MonoBehaviour {
         {
             Gizmos.color = new Color(0, 1, 0, 0.5f); 
             Gizmos.DrawCube(rect.center, rect.size);
-            //GUI.Box(new Rect(rect.x - 100, rect.y - 100, rect.width, rect.height), "Section ID: ");
+        }
+        foreach (Rect rect in corridorList)
+        {
+            Gizmos.color = new Color(0, 0, 1, 0.5f);
+            Gizmos.DrawCube(rect.center, rect.size);
         }
     }
 
-    /*public void DrawRooms(Section section)
+    public void DrawRooms(Section section)
     {
         if(section == null)
         {
@@ -59,15 +65,17 @@ public class BSPGeneration : MonoBehaviour {
             DrawRooms(section.left);
             DrawRooms(section.right);
         }
-    }*/
+    }
 
     public class Section
     {
         public Section left, right;
         public Rect rect;
         public Rect room = new Rect(-1, -1, 0, 0); // i.e null
+        public Rect corridor = new Rect(-1, -1, 0, 0); // i.e null
+
         public int sectionID;
-        private static int sectionIDCounter = 0;
+        public static int sectionIDCounter = 0;
 
         public void CreateRoom()
         {
@@ -88,10 +96,33 @@ public class BSPGeneration : MonoBehaviour {
 
                 room = new Rect(rect.x + roomX, rect.y + roomY, roomWidth, roomHeight);
 
+                print("xMin: " + rect.xMin + "  xMax: " + rect.xMax);
+
+
+                float corridorX = Random.Range(room.xMin + 1, room.xMax - 1);
+                float corridorY;
+                if (Random.Range(0.0f, 1.0f) > 0.5f)
+                {
+                    corridorY = room.yMax - 1;
+                }
+                else
+                {
+                    corridorY = room.yMin;
+                }
+                if(room.size > room.)
+                corridor = new Rect(corridorX, corridorY, 1, 1);
+
                 sectionList.Add(room);
-                
+                corridorList.Add(corridor);
+
+
                 Debug.Log("Created room " + room + " in section " + sectionID + " " + rect);
             }
+        }
+
+        public void CreateCorridor()
+        {
+            
         }
 
         public bool IsLeaf()
@@ -109,7 +140,7 @@ public class BSPGeneration : MonoBehaviour {
         public bool Split(int minRoomSize, int maxRoomSize)
         {
             //If this has already split
-            if (!IsLeaf())
+            if (IsLeaf() == false)
             {
                 //Stop splitting
                 return false;
@@ -119,7 +150,7 @@ public class BSPGeneration : MonoBehaviour {
             {
                 splitHorizontally = false;
             }
-            if (rect.height / rect.width >= 1.25)
+            else if (rect.height / rect.width >= 1.25)
             {
                 splitHorizontally = true;
             }
@@ -139,25 +170,22 @@ public class BSPGeneration : MonoBehaviour {
                 int splitValue = Random.Range(minRoomSize, (int)rect.width - minRoomSize);
 
                 left = new Section(new Rect(rect.x, rect.y, rect.width, splitValue));
-                //sectionList.Add(left.rect);
-
                 right = new Section(new Rect(rect.x, rect.y + splitValue, rect.width, rect.height - splitValue));
-                //sectionList.Add(right.rect);
             }
             else
             {
                 int splitValue = Random.Range(minRoomSize, (int)rect.height - minRoomSize);
 
                 left = new Section(new Rect(rect.x, rect.y, splitValue, rect.height));
-                //sectionList.Add(left.rect);
                 right = new Section(new Rect(rect.x + splitValue, rect.y, rect.width - splitValue, rect.height));
+                //sectionList.Add(left.rect);
                 //sectionList.Add(right.rect);
             }
             return true;
         }
     }
 
-    public void CreateBSP(Section section)
+    public void Partition(Section section)
     {
         Debug.Log("Splitting section " + section.sectionID + ": " + section.rect);
         if (section.IsLeaf() == true)
@@ -174,8 +202,8 @@ public class BSPGeneration : MonoBehaviour {
                               + section.left.sectionID + ": " + section.left.rect + ", "
                               + section.right.sectionID + ": " + section.right.rect);
 
-                    CreateBSP(section.left);
-                    CreateBSP(section.right);
+                    Partition(section.left);
+                    Partition(section.right);
                 }
             }
         }
