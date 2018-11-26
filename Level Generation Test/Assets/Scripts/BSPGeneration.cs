@@ -109,7 +109,6 @@ public class BSPGeneration : MonoBehaviour {
                 {
                     corridorY = room.yMin;
                 }
-                if(room.size > room.)
                 corridor = new Rect(corridorX, corridorY, 1, 1);
 
                 sectionList.Add(room);
