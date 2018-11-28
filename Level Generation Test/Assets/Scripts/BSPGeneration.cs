@@ -7,14 +7,22 @@ public class BSPGeneration : MonoBehaviour
     public int rows, columns;
     public int minRoomSize, maxRoomSize;
 
-    public static List<Rect> sectionList = new List<Rect>();
-    public static List<Rect> roomList = new List<Rect>();
-    public static List<Rect> corridorList = new List<Rect>();
+    public int zoneWidth;
+    public int zoneHeight;
+
+    public int amountOfZones = 1;
+    public Rect[,] zones;
+
+    private static List<Rect> sectionList = new List<Rect>();
+    private static List<Room> roomList = new List<Room>();
+    private static List<Rect> corridorList = new List<Rect>();
 
     public GameObject floorTile;
     public GameObject[,] floorPositions;
 
     int counter = 0;
+    public Rect mapSize;
+
 
     private void Start()
     {
@@ -22,7 +30,12 @@ public class BSPGeneration : MonoBehaviour
         Partition(initialSection);
         initialSection.CreateRoom();
 
+
         floorPositions = new GameObject[rows, columns];
+        zones = new Rect[rows, columns];
+        InitialiseZones(initialSection.rect);
+        mapSize = initialSection.rect;
+
 
         // DrawRooms(initialSection);
 
@@ -30,13 +43,13 @@ public class BSPGeneration : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        float mostLeftSection = 5;
+        /*float mostLeftSection = 5;
         float mostRightSection = 0;
         bool notRun = true;
         Rect leftMost = new Rect(-1, -1, 0, 0); // i.e null
         Rect rightMost = new Rect(-1, -1, 0, 0); // i.e null
 
-        /*if (notRun)
+        if (notRun)
         {
             foreach(Rect rect in sectionList)
             {
@@ -45,21 +58,61 @@ public class BSPGeneration : MonoBehaviour
                 counter++;
                 if (counter >= sectionList.Count) { notRun = false; }
             }
-        }
-        Gizmos.color = new Color(1, 0, 0, 0.5f);
-        Gizmos.DrawCube(rightMost.center, rightMost.size);
-        Gizmos.DrawCube(leftMost.center, leftMost.size);*/
+        }*/
 
+        Gizmos.color = new Color(1, 0, 1, 0.2f);
+        Gizmos.DrawCube(mapSize.center, mapSize.size);
 
         foreach (Rect rect in sectionList)
         {
-            Gizmos.color = new Color(1, 0, 0, 0.5f);
+            Gizmos.color = Color.black;
             Gizmos.DrawWireCube(rect.center, rect.size);
         }
-        foreach (Rect rect in roomList)
+
+        foreach (Rect zone in zones)
         {
-            Gizmos.color = new Color(0, 1, 0, 0.5f);
-            Gizmos.DrawCube(rect.center, rect.size);
+            Gizmos.color = new Color(0, 1, 0, 0.2f);
+            Gizmos.DrawWireCube(zone.center, zone.size);
+        }
+
+        foreach (Room room in roomList)
+        {
+            /*if (!room.hasRandomised)
+            {
+                for (int i = (int)mapSize.xMin; i < mapSize.xMax; i++)
+                {
+                    for (int j = (int)mapSize.yMin; j < mapSize.yMax; j++)
+                    {
+                        if (zones[i, j].Contains(room.rect.center))
+                        {
+                            room.r = Random.Range(0f, 1f);
+                            room.g = Random.Range(0f, 1f);
+                            room.b = Random.Range(0f, 1f);
+                            room.hasRandomised = true;
+                        }
+                    }
+                }
+            }*/
+            if (!room.hasRandomised)
+            {
+                foreach (Rect zone in zones)
+                {
+                    if(zone.Contains(room.rect.center))
+                    {
+                        room.r = Random.Range(0f, 1f);
+                        room.g = Random.Range(0f, 1f);
+                        room.b = Random.Range(0f, 1f);
+                        room.hasRandomised = true;
+                    }
+                }
+            }
+            /*if (quadrantA.Contains(rect.center))
+            {
+                Gizmos.color = new Color(1, 0, 0, 0.5f);
+            }*/
+            //Gizmos.color = new Color(0.5f, 0, 0, 0.5f);
+            Gizmos.color = new Color(room.r, room.g, room.b, 0.5f);
+            Gizmos.DrawCube(room.rect.center, room.rect.size);
         }
         foreach (Rect rect in corridorList)
         {
@@ -76,9 +129,9 @@ public class BSPGeneration : MonoBehaviour
         }
         if (section.IsLeaf())
         {
-            for (int i = (int)section.room.x; i < section.room.xMax; i++)
+            for (int i = (int)section.room.rect.x; i < section.room.rect.xMax; i++)
             {
-                for (int j = (int)section.room.y; j < section.room.yMax; j++)
+                for (int j = (int)section.room.rect.y; j < section.room.rect.yMax; j++)
                 {
                     GameObject instance = Instantiate(floorTile, new Vector3(i, j, 0f), Quaternion.identity) as GameObject;
                     instance.transform.SetParent(transform);
@@ -93,11 +146,29 @@ public class BSPGeneration : MonoBehaviour
         }
     }
 
+    public class Room
+    {
+        public Rect rect;
+        public bool hasRandomised = false;
+        public float b;
+        public float r;
+        public float g;
+
+        public Color color;
+
+        public Room(Rect trect, Color tcolor = default(Color))
+        {
+            rect = trect;
+            color = tcolor;
+        }
+    }
+
+
     public class Section
     {
         public Section left, right;
         public Rect rect;
-        public Rect room = new Rect(-1, -1, 0, 0); // i.e null
+        public Room room = new Room(new Rect(-1, -1, 0, 0)); // i.e null
         public Rect corridor = new Rect(-1, -1, 0, 0); // i.e null
 
         public int sectionID;
@@ -120,17 +191,17 @@ public class BSPGeneration : MonoBehaviour
                 int roomX = (int)Random.Range(1, rect.width - roomWidth - 1);
                 int roomY = (int)Random.Range(1, rect.height - roomHeight - 1);
 
-                room = new Rect(rect.x + roomX, rect.y + roomY, roomWidth, roomHeight);
+                room = new Room(new Rect(rect.x + roomX, rect.y + roomY, roomWidth, roomHeight));
 
-                float corridorX = Random.Range(room.xMin + 1, room.xMax - 1);
+                float corridorX = Random.Range(rect.xMin + 1, room.rect.xMax - 1);
                 float corridorY;
                 if (Random.Range(0.0f, 1.0f) > 0.5f)
                 {
-                    corridorY = room.yMax - 1;
+                    corridorY = room.rect.yMax - 1;
                 }
                 else
                 {
-                    corridorY = room.yMin;
+                    corridorY = room.rect.yMin;
                 }
                 corridor = new Rect(corridorX, corridorY, 1, 1);
 
@@ -149,9 +220,9 @@ public class BSPGeneration : MonoBehaviour
             return left == null && right == null;
         }
 
-        public Section(Rect mrect)
+        public Section(Rect trect)
         {
-            rect = mrect;
+            rect = trect;
             sectionID = sectionIDCounter;
             sectionIDCounter++;
         }
@@ -219,6 +290,25 @@ public class BSPGeneration : MonoBehaviour
                     Partition(section.left);
                     Partition(section.right);
                 }
+            }
+        }
+    }
+
+    public class Zone
+    {
+
+    }
+
+    void InitialiseZones(Rect section)
+    {
+        zoneHeight = (columns) / amountOfZones;
+        zoneWidth = (rows) / amountOfZones;
+
+        for (int i = (int)section.x; i < section.xMax / zoneWidth; i++)
+        {
+            for (int j = (int)section.y; j < section.yMax / zoneHeight; j++)
+            {
+                zones[i, j] = new Rect(i * zoneWidth, j * zoneHeight, zoneWidth, zoneHeight);
             }
         }
     }

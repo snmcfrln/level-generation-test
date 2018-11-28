@@ -221,7 +221,16 @@ MonoBehaviour:
   columns: 100
   minRoomSize: 6
   maxRoomSize: 20
+  zoneWidth: 0
+  zoneHeight: 0
+  amountOfZones: 2
   floorTile: {fileID: 1549296128972244, guid: f2dfef3520652424485407efae051f38, type: 2}
+  mapSize:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 0
+    height: 0
 --- !u!4 &1045295332
 Transform:
   m_ObjectHideFlags: 0
