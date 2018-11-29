@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class BSPGeneration : MonoBehaviour
+public class Test : MonoBehaviour
 {
     public int rows, columns;
     public int minRoomSize, maxRoomSize;
@@ -10,17 +10,21 @@ public class BSPGeneration : MonoBehaviour
     public int zoneWidth;
     public int zoneHeight;
 
+    int zonex, zoney;
+
     public int amountOfZones = 1;
-    public Rect[,] zones;
+
+    public bool zoned = false;
+    public Zone[,] zones;
 
     private static List<Rect> sectionList = new List<Rect>();
     private static List<Room> roomList = new List<Room>();
     private static List<Rect> corridorList = new List<Rect>();
+    private static List<Zone> zoneList = new List<Zone>();
 
     public GameObject floorTile;
     public GameObject[,] floorPositions;
 
-    int counter = 0;
     public Rect mapSize;
 
 
@@ -30,36 +34,18 @@ public class BSPGeneration : MonoBehaviour
         Partition(initialSection);
         initialSection.CreateRoom();
 
-
         floorPositions = new GameObject[rows, columns];
-        zones = new Rect[rows, columns];
+        zones = new Zone[rows, columns];
         InitialiseZones(initialSection.rect);
         mapSize = initialSection.rect;
 
 
-         DrawRooms(initialSection);
+        // DrawRooms(initialSection);
 
     }
 
     private void OnDrawGizmos()
     {
-        /*float mostLeftSection = 5;
-        float mostRightSection = 0;
-        bool notRun = true;
-        Rect leftMost = new Rect(-1, -1, 0, 0); // i.e null
-        Rect rightMost = new Rect(-1, -1, 0, 0); // i.e null
-
-        if (notRun)
-        {
-            foreach(Rect rect in sectionList)
-            {
-                if (rect.y < mostLeftSection) { leftMost = rect; }
-                if (rect.y > mostRightSection) { rightMost = rect; }
-                counter++;
-                if (counter >= sectionList.Count) { notRun = false; }
-            }
-        }*/
-
         Gizmos.color = new Color(1, 0, 1, 0.2f);
         Gizmos.DrawCube(mapSize.center, mapSize.size);
 
@@ -69,10 +55,22 @@ public class BSPGeneration : MonoBehaviour
             Gizmos.DrawWireCube(rect.center, rect.size);
         }
 
-        foreach (Rect zone in zones)
+        if (zoned)
         {
-            Gizmos.color = new Color(0, 1, 0, 0.2f);
-            Gizmos.DrawWireCube(zone.center, zone.size);
+            foreach (Zone zone in zoneList)
+            {
+                Gizmos.color = new Color(0, 1, 0, 0.2f);
+                Gizmos.DrawWireCube(zone.rect.center, zone.rect.size);
+                //print("Zone: " + zone.ID + " Center: " + zone.rect.center + " Size: " + zone.rect.size);
+            }
+           /* for (int i = 0; i < zones.Length; i++)
+            {
+                for (int j = 0; j < zones.Length; j++)
+                {
+                    print("Zone: " + zones[i, j].ID + " Center: " + zones[i, j].rect.center + " Size: " + zones[i, j].rect.size);
+                    print("i: " + i + " j: " + j);
+                }
+            }*/
         }
 
         foreach (Room room in roomList)
@@ -93,11 +91,11 @@ public class BSPGeneration : MonoBehaviour
                     }
                 }
             }*/
-            if (!room.hasRandomised)
+            /*if (!room.hasRandomised)
             {
-                foreach (Rect zone in zones)
+                foreach (Zone zone in zones)
                 {
-                    if (zone.Contains(room.rect.center))
+                    if(zone.rect.Contains(room.rect.center))
                     {
                         room.r = Random.Range(0f, 1f);
                         room.g = Random.Range(0f, 1f);
@@ -105,13 +103,8 @@ public class BSPGeneration : MonoBehaviour
                         room.hasRandomised = true;
                     }
                 }
-            }
-            /*if (quadrantA.Contains(rect.center))
-            {
-                Gizmos.color = new Color(1, 0, 0, 0.5f);
             }*/
-            //Gizmos.color = new Color(0.5f, 0, 0, 0.5f);
-            Gizmos.color = new Color(room.r, room.g, room.b, 0.5f);
+            Gizmos.color = new Color(0.4f, 0, 0, 0.5f);
             Gizmos.DrawCube(room.rect.center, room.rect.size);
         }
         foreach (Rect rect in corridorList)
@@ -135,7 +128,6 @@ public class BSPGeneration : MonoBehaviour
                 {
                     GameObject instance = Instantiate(floorTile, new Vector3(i, j, 0f), Quaternion.identity) as GameObject;
                     instance.transform.SetParent(transform);
-
                 }
             }
         }
@@ -163,6 +155,18 @@ public class BSPGeneration : MonoBehaviour
         }
     }
 
+    public class Zone
+    {
+        public int ID;
+        private static int idCounter;
+        public Rect rect;
+        public Zone(Rect trect)
+        {
+            rect = trect;
+            ID = idCounter;
+            idCounter++;
+        }
+    }
 
     public class Section
     {
@@ -281,8 +285,8 @@ public class BSPGeneration : MonoBehaviour
         if (section.IsLeaf() == true)
         {
             if (section.rect.width > maxRoomSize
-                || section.rect.height > maxRoomSize
-                || Random.Range(0.0f, 1.0f) > 0.25)
+            || section.rect.height > maxRoomSize
+            || Random.Range(0.0f, 1.0f) > 0.25)
             {
 
                 if (section.Split(minRoomSize, maxRoomSize))
@@ -294,11 +298,6 @@ public class BSPGeneration : MonoBehaviour
         }
     }
 
-    public class Zone
-    {
-
-    }
-
     void InitialiseZones(Rect section)
     {
         zoneHeight = (columns) / amountOfZones;
@@ -308,8 +307,12 @@ public class BSPGeneration : MonoBehaviour
         {
             for (int j = (int)section.y; j < section.yMax / zoneHeight; j++)
             {
-                zones[i, j] = new Rect(i * zoneWidth, j * zoneHeight, zoneWidth, zoneHeight);
+                zones[i, j] = new Zone(new Rect(i * zoneWidth, j * zoneHeight, zoneWidth, zoneHeight));
+                zoneList.Add(zones[i, j]);
+                print("zi: " + i + "zj: " + j);
+                print("Zone " + zones[i, j].ID + " created" + zones[i, j].rect.center);
             }
         }
+        zoned = true;
     }
 }

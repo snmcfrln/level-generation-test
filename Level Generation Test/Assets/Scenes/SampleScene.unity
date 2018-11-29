@@ -199,6 +199,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1045295332}
   - component: {fileID: 1045295331}
+  - component: {fileID: 1045295333}
   m_Layer: 0
   m_Name: LevelGenerator
   m_TagString: Untagged
@@ -212,7 +213,7 @@ MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInternal: {fileID: 0}
   m_GameObject: {fileID: 1045295330}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 053db0273baf4ec4bb875ebed8046758, type: 3}
   m_Name: 
@@ -244,3 +245,29 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1045295333
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 1045295330}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d9fda377f08e41009f46815f119177d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rows: 100
+  columns: 100
+  minRoomSize: 6
+  maxRoomSize: 20
+  zoneWidth: 0
+  zoneHeight: 0
+  amountOfZones: 2
+  zoned: 0
+  floorTile: {fileID: 0}
+  mapSize:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 0
+    height: 0
