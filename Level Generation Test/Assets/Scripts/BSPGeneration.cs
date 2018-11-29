@@ -15,8 +15,8 @@ public class BSPGeneration : MonoBehaviour
     private Zone[,] zones;
 
     private static List<Rect> sectionList = new List<Rect>();
-    private static List<Room> roomList = new List<Room>();
     private static List<Rect> corridorList = new List<Rect>();
+    private static List<Room> roomList = new List<Room>();
     private static List<Zone> zoneList = new List<Zone>();
 
     public GameObject floorTile;
@@ -36,9 +36,7 @@ public class BSPGeneration : MonoBehaviour
         InitialiseZones(initialSection.rect);
         mapSize = initialSection.rect;
 
-
         // DrawRooms(initialSection);
-
     }
 
     private void OnDrawGizmos()
@@ -73,7 +71,6 @@ public class BSPGeneration : MonoBehaviour
                     }
                 }
             }
-
             Gizmos.color = room.color;
             Gizmos.DrawCube(room.rect.center, room.rect.size);
         }
@@ -148,6 +145,13 @@ public class BSPGeneration : MonoBehaviour
         public int sectionID;
         public static int sectionIDCounter = 0;
 
+        public Section(Rect trect)
+        {
+            rect = trect;
+            sectionID = sectionIDCounter;
+            sectionIDCounter++;
+        }
+
         public void CreateRoom()
         {
             if (left != null)
@@ -167,7 +171,7 @@ public class BSPGeneration : MonoBehaviour
 
                 room = new Room(new Rect(rect.x + roomX, rect.y + roomY, roomWidth, roomHeight));
 
-                float corridorX = Random.Range(rect.xMin + 1, room.rect.xMax - 1);
+                float corridorX = Random.Range(Mathf.Abs(room.rect.xMin) + 1, Mathf.Abs(room.rect.xMax) - 1);
                 float corridorY;
                 if (Random.Range(0.0f, 1.0f) > 0.5f)
                 {
@@ -177,7 +181,7 @@ public class BSPGeneration : MonoBehaviour
                 {
                     corridorY = room.rect.yMin;
                 }
-                corridor = new Rect(corridorX, corridorY, 1, 1);
+                corridor = new Rect(corridorX, Mathf.Abs(corridorY), 1, 1);
 
                 roomList.Add(room);
                 corridorList.Add(corridor);
@@ -187,13 +191,6 @@ public class BSPGeneration : MonoBehaviour
         public bool IsLeaf()
         {
             return left == null && right == null;
-        }
-
-        public Section(Rect trect)
-        {
-            rect = trect;
-            sectionID = sectionIDCounter;
-            sectionIDCounter++;
         }
 
         public bool Split(int minRoomSize, int maxRoomSize)
@@ -241,7 +238,6 @@ public class BSPGeneration : MonoBehaviour
                 sectionList.Add(left.rect);
                 sectionList.Add(right.rect);
             }
-
             return true;
         }
     }
@@ -268,9 +264,9 @@ public class BSPGeneration : MonoBehaviour
         int zoneHeight = (columns) / amountOfZones;
         int zoneWidth = (rows) / amountOfZones;
 
-        for (int i = (int)section.x; i < section.xMax / zoneWidth; i++)
+        for (int i = (int)section.xMin; i < section.xMax / zoneWidth; i++)
         {
-            for (int j = (int)section.y; j < section.yMax / zoneHeight; j++)
+            for (int j = (int)section.yMin; j < section.yMax / zoneHeight; j++)
             {
                 zones[i, j] = new Zone(new Rect(i * zoneWidth, j * zoneHeight, zoneWidth, zoneHeight));
                 zoneList.Add(zones[i, j]);
