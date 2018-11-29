@@ -4,24 +4,25 @@ using UnityEngine;
 
 public class BSPGeneration : MonoBehaviour
 {
+    [Header("Map Size")]
     public int rows, columns;
+    [Header("Room Size")]
     public int minRoomSize, maxRoomSize;
-
-    public int zoneWidth;
-    public int zoneHeight;
-
+    [Header("Number of zones per row/column")]
     public int amountOfZones = 1;
-    public Rect[,] zones;
+
+    private bool zoned = false;
+    private Zone[,] zones;
 
     private static List<Rect> sectionList = new List<Rect>();
     private static List<Room> roomList = new List<Room>();
     private static List<Rect> corridorList = new List<Rect>();
+    private static List<Zone> zoneList = new List<Zone>();
 
     public GameObject floorTile;
-    public GameObject[,] floorPositions;
+    private GameObject[,] floorPositions;
 
-    int counter = 0;
-    public Rect mapSize;
+    private Rect mapSize;
 
 
     private void Start()
@@ -30,36 +31,18 @@ public class BSPGeneration : MonoBehaviour
         Partition(initialSection);
         initialSection.CreateRoom();
 
-
         floorPositions = new GameObject[rows, columns];
-        zones = new Rect[rows, columns];
+        zones = new Zone[rows, columns];
         InitialiseZones(initialSection.rect);
         mapSize = initialSection.rect;
 
 
-         DrawRooms(initialSection);
+        // DrawRooms(initialSection);
 
     }
 
     private void OnDrawGizmos()
     {
-        /*float mostLeftSection = 5;
-        float mostRightSection = 0;
-        bool notRun = true;
-        Rect leftMost = new Rect(-1, -1, 0, 0); // i.e null
-        Rect rightMost = new Rect(-1, -1, 0, 0); // i.e null
-
-        if (notRun)
-        {
-            foreach(Rect rect in sectionList)
-            {
-                if (rect.y < mostLeftSection) { leftMost = rect; }
-                if (rect.y > mostRightSection) { rightMost = rect; }
-                counter++;
-                if (counter >= sectionList.Count) { notRun = false; }
-            }
-        }*/
-
         Gizmos.color = new Color(1, 0, 1, 0.2f);
         Gizmos.DrawCube(mapSize.center, mapSize.size);
 
@@ -69,51 +52,32 @@ public class BSPGeneration : MonoBehaviour
             Gizmos.DrawWireCube(rect.center, rect.size);
         }
 
-        foreach (Rect zone in zones)
+        if (zoned)
         {
-            Gizmos.color = new Color(0, 1, 0, 0.2f);
-            Gizmos.DrawWireCube(zone.center, zone.size);
+            foreach (Zone zone in zoneList)
+            {
+                Gizmos.color = new Color(0, 1, 0, 0.2f);
+                Gizmos.DrawWireCube(zone.rect.center, zone.rect.size);
+            }
         }
 
         foreach (Room room in roomList)
         {
-            /*if (!room.hasRandomised)
+            if(!room.hasRandomised)
             {
-                for (int i = (int)mapSize.xMin; i < mapSize.xMax; i++)
+                for (int i = 0; i < zoneList.Count; i++)
                 {
-                    for (int j = (int)mapSize.yMin; j < mapSize.yMax; j++)
+                    if (zoneList[i].rect.Contains(room.rect.center))
                     {
-                        if (zones[i, j].Contains(room.rect.center))
-                        {
-                            room.r = Random.Range(0f, 1f);
-                            room.g = Random.Range(0f, 1f);
-                            room.b = Random.Range(0f, 1f);
-                            room.hasRandomised = true;
-                        }
-                    }
-                }
-            }*/
-            if (!room.hasRandomised)
-            {
-                foreach (Rect zone in zones)
-                {
-                    if (zone.Contains(room.rect.center))
-                    {
-                        room.r = Random.Range(0f, 1f);
-                        room.g = Random.Range(0f, 1f);
-                        room.b = Random.Range(0f, 1f);
-                        room.hasRandomised = true;
+                        room.color = zoneList[i].color;
                     }
                 }
             }
-            /*if (quadrantA.Contains(rect.center))
-            {
-                Gizmos.color = new Color(1, 0, 0, 0.5f);
-            }*/
-            //Gizmos.color = new Color(0.5f, 0, 0, 0.5f);
-            Gizmos.color = new Color(room.r, room.g, room.b, 0.5f);
+
+            Gizmos.color = room.color;
             Gizmos.DrawCube(room.rect.center, room.rect.size);
         }
+
         foreach (Rect rect in corridorList)
         {
             Gizmos.color = new Color(0, 0, 1, 0.5f);
@@ -135,7 +99,6 @@ public class BSPGeneration : MonoBehaviour
                 {
                     GameObject instance = Instantiate(floorTile, new Vector3(i, j, 0f), Quaternion.identity) as GameObject;
                     instance.transform.SetParent(transform);
-
                 }
             }
         }
@@ -150,10 +113,6 @@ public class BSPGeneration : MonoBehaviour
     {
         public Rect rect;
         public bool hasRandomised = false;
-        public float b;
-        public float r;
-        public float g;
-
         public Color color;
 
         public Room(Rect trect, Color tcolor = default(Color))
@@ -163,6 +122,21 @@ public class BSPGeneration : MonoBehaviour
         }
     }
 
+    public class Zone
+    {
+        public int ID;
+        public Rect rect;
+        private static int idCounter;
+        public Color color;
+
+        public Zone(Rect trect)
+        {
+            rect = trect;
+            ID = idCounter;
+            idCounter++;
+            color = new Color(Random.Range(0.0f, 1.0f), Random.Range(0.0f, 1.0f), Random.Range(0.0f, 1.0f));
+        }
+    }
 
     public class Section
     {
@@ -210,11 +184,6 @@ public class BSPGeneration : MonoBehaviour
             }
         }
 
-        public void CreateCorridor()
-        {
-
-        }
-
         public bool IsLeaf()
         {
             return left == null && right == null;
@@ -229,13 +198,13 @@ public class BSPGeneration : MonoBehaviour
 
         public bool Split(int minRoomSize, int maxRoomSize)
         {
-            //If this has already split
             if (IsLeaf() == false)
             {
-                //Stop splitting
                 return false;
             }
+
             bool splitHorizontally;
+
             if (rect.width / rect.height >= 1.25)
             {
                 splitHorizontally = false;
@@ -272,6 +241,7 @@ public class BSPGeneration : MonoBehaviour
                 sectionList.Add(left.rect);
                 sectionList.Add(right.rect);
             }
+
             return true;
         }
     }
@@ -281,10 +251,9 @@ public class BSPGeneration : MonoBehaviour
         if (section.IsLeaf() == true)
         {
             if (section.rect.width > maxRoomSize
-                || section.rect.height > maxRoomSize
-                || Random.Range(0.0f, 1.0f) > 0.25)
+            || section.rect.height > maxRoomSize
+            || Random.Range(0.0f, 1.0f) > 0.25)
             {
-
                 if (section.Split(minRoomSize, maxRoomSize))
                 {
                     Partition(section.left);
@@ -294,22 +263,21 @@ public class BSPGeneration : MonoBehaviour
         }
     }
 
-    public class Zone
-    {
-
-    }
-
     void InitialiseZones(Rect section)
     {
-        zoneHeight = (columns) / amountOfZones;
-        zoneWidth = (rows) / amountOfZones;
+        int zoneHeight = (columns) / amountOfZones;
+        int zoneWidth = (rows) / amountOfZones;
 
         for (int i = (int)section.x; i < section.xMax / zoneWidth; i++)
         {
             for (int j = (int)section.y; j < section.yMax / zoneHeight; j++)
             {
-                zones[i, j] = new Rect(i * zoneWidth, j * zoneHeight, zoneWidth, zoneHeight);
+                zones[i, j] = new Zone(new Rect(i * zoneWidth, j * zoneHeight, zoneWidth, zoneHeight));
+                zoneList.Add(zones[i, j]);
+                print("zi: " + i + "zj: " + j);
+                print("Zone " + zones[i, j].ID + " created" + zones[i, j].rect.center);
             }
         }
+        zoned = true;
     }
 }
