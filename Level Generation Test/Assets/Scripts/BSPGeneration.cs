@@ -11,7 +11,6 @@ public class BSPGeneration : MonoBehaviour
     [Header("Number of zones per row/column")]
     public int amountOfZones = 1;
 
-    private bool zoned = false;
     private Zone[,] zones;
 
     private static List<Rect> sectionList = new List<Rect>();
@@ -41,7 +40,7 @@ public class BSPGeneration : MonoBehaviour
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = new Color(1, 0, 1, 0.2f);
+        Gizmos.color = new Color(1, 1, 1, 0.5f);
         Gizmos.DrawCube(mapSize.center, mapSize.size);
 
         foreach (Rect rect in sectionList)
@@ -50,7 +49,7 @@ public class BSPGeneration : MonoBehaviour
             Gizmos.DrawWireCube(rect.center, rect.size);
         }
 
-        if (zoned)
+        if (Application.isPlaying)
         {
             foreach (Zone zone in zoneList)
             {
@@ -274,6 +273,5 @@ public class BSPGeneration : MonoBehaviour
                 print("Zone " + zones[i, j].ID + " created" + zones[i, j].rect.center);
             }
         }
-        zoned = true;
     }
 }

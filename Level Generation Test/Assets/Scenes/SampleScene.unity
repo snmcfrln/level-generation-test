@@ -219,9 +219,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rows: 300
   columns: 300
-  minRoomSize: 20
+  minRoomSize: 6
   maxRoomSize: 30
-  amountOfZones: 3
+  amountOfZones: 5
   floorTile: {fileID: 1549296128972244, guid: f2dfef3520652424485407efae051f38, type: 2}
 --- !u!4 &1045295332
 Transform:
