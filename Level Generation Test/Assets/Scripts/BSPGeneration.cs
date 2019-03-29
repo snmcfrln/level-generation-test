@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,21 +21,16 @@ public class BSPGeneration : MonoBehaviour
     private static List<Zone> zoneList = new List<Zone>();
 
     public GameObject[] dungeons;
-    public Vector2[] dungeonSize;
-
-    public GameObject floorTile;
-    private GameObject[,] floorPositions;
 
     private Rect mapSize;
 
 
-    private void Start()
+    private void Awake()
     {
         Section initialSection = new Section(new Rect(0, 0, rows, columns));
         Partition(initialSection);
-        initialSection.CreateRoom();
+        CreateRoom(initialSection);
 
-        floorPositions = new GameObject[rows, columns];
         zones = new Zone[rows, columns];
         InitialiseZones(initialSection.rect);
         mapSize = initialSection.rect;
@@ -43,6 +39,13 @@ public class BSPGeneration : MonoBehaviour
         {
             GetNeighbours(room);
         }
+
+        //dungeons.OrderBy(dungeons => dungeons.GetComponent<Renderer>().bounds.size).ToArray();
+        for (int i = 0; i < dungeons.Length; i++)
+        {
+            print(dungeons[i].GetComponent<Renderer>().bounds.size);
+        }
+
         // DrawRooms(initialSection);
     }
 
@@ -115,24 +118,67 @@ public class BSPGeneration : MonoBehaviour
 
     }
 
-    /*public Vector2 RoomWidth(Rect rect)
+    public Vector2 RoomWidth(Rect rect)
     {
         Vector2 roomsize;
+        roomsize = new Vector2(1, 3);
 
         int sectionX = (int)rect.size.x;
         int sectionY = (int)rect.size.y;
 
-        for (int i = 0; i < dungeonSize.Length; i++)
+        for (int i = 0; i < dungeons.Length; i++)
         {
-            if (dungeonSize[i].x < sectionX && dungeonSize[i].x < sectionX)
+            int dungeonX = (int)dungeons[i].GetComponent<Renderer>().bounds.size.x;
+            int dungeonY = (int)dungeons[i].GetComponent<Renderer>().bounds.size.y;
+            if (dungeonX < sectionX && dungeonY < sectionY)
             {
-                roomsize = new Vector2(dungeonSize[i].x, dungeonSize[i].y);
+                roomsize = new Vector2(dungeonX, dungeonY);
+                print("Success!");
                 return roomsize;
+                //print(dungeon.GetComponent<Renderer>().bounds.size);
             }
         }
-        roomsize = new Vector2(1, 1);
         return roomsize;
-    }*/
+    }
+
+    public void CreateRoom(Section section)
+    {
+        if (section.left != null)
+        {
+            CreateRoom(section.left);
+        }
+        if (section.right != null)
+        {
+            CreateRoom(section.right);
+        }
+        if (section.IsLeaf())
+        {
+            Vector2 roomDimensions = RoomWidth(section.rect);
+            int roomWidth = (int)roomDimensions.x;
+            int roomHeight = (int)roomDimensions.y;
+            //int roomWidth = (int)Random.Range(section.rect.width / 2, section.rect.width - 2);
+            //int roomHeight = (int)Random.Range(section.rect.height / 2, section.rect.height - 2);
+            int roomX = (int)Random.Range(1, section.rect.width - roomWidth - 1);
+            int roomY = (int)Random.Range(1, section.rect.height - roomHeight - 1);
+
+            section.room = new Room(new Rect(section.rect.x + roomX, section.rect.y + roomY, roomWidth, roomHeight));
+
+            float corridorX = Random.Range(Mathf.Abs(section.room.rect.xMin) + 1, Mathf.Abs(section.room.rect.xMax) - 1);
+            float corridorY;
+            if (Random.Range(0.0f, 1.0f) > 0.5f)
+            {
+                corridorY = section.room.rect.yMax - 1;
+            }
+            else
+            {
+                corridorY = section.room.rect.yMin;
+            }
+            section.corridor = new Rect(corridorX, Mathf.Abs(corridorY), 1, 1);
+
+            roomList.Add(section.room);
+            corridorList.Add(section.corridor);
+        }
+    }
 
     public class Room
     {
@@ -170,9 +216,8 @@ public class BSPGeneration : MonoBehaviour
     {
         public Section left, right;
         public Rect rect;
-        public Room room = new Room(new Rect(-1, -1, 0, 0)); // i.e null
-        public Rect corridor = new Rect(-1, -1, 0, 0); // i.e null
-        BSPGeneration bsp = new BSPGeneration();
+        public Room room = new Room(new Rect(-1, -1, 0, 0)); //null
+        public Rect corridor = new Rect(-1, -1, 0, 0); //null
 
         public int sectionID;
         public static int sectionIDCounter = 0;
@@ -182,45 +227,6 @@ public class BSPGeneration : MonoBehaviour
             rect = trect;
             sectionID = sectionIDCounter;
             sectionIDCounter++;
-        }
-
-        public void CreateRoom()
-        {
-            if (left != null)
-            {
-                left.CreateRoom();
-            }
-            if (right != null)
-            {
-                right.CreateRoom();
-            }
-            if (IsLeaf())
-            {
-                //Vector2 roomDimensions = bsp.RoomWidth(rect);
-                //int roomWidth = (int)roomDimensions.x;
-                //int roomHeight = (int)roomDimensions.y;
-                int roomWidth = (int)Random.Range(rect.width / 2, rect.width - 2);
-                int roomHeight = (int)Random.Range(rect.height / 2, rect.height - 2);
-                int roomX = (int)Random.Range(1, rect.width - roomWidth - 1);
-                int roomY = (int)Random.Range(1, rect.height - roomHeight - 1);
-
-                room = new Room(new Rect(rect.x + roomX, rect.y + roomY, roomWidth, roomHeight));
-
-                float corridorX = Random.Range(Mathf.Abs(room.rect.xMin) + 1, Mathf.Abs(room.rect.xMax) - 1);
-                float corridorY;
-                if (Random.Range(0.0f, 1.0f) > 0.5f)
-                {
-                    corridorY = room.rect.yMax - 1;
-                }
-                else
-                {
-                    corridorY = room.rect.yMin;
-                }
-                corridor = new Rect(corridorX, Mathf.Abs(corridorY), 1, 1);
-
-                roomList.Add(room);
-                corridorList.Add(corridor);
-            }
         }
 
         public bool IsLeaf()

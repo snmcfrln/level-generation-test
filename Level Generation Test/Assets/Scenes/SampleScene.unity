@@ -225,16 +225,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   rows: 100
   columns: 100
-  minRoomSize: 10
-  maxRoomSize: 20
+  minRoomSize: 7
+  maxRoomSize: 15
   amountOfZones: 2
   dungeons:
+  - {fileID: 4763201867346250480, guid: b6d1ff115b858424ea152ec7cf800cf3, type: 3}
   - {fileID: 8630479160498746060, guid: f895c6c1d91314a72a27dee6770041c0, type: 3}
+  - {fileID: 2110733878859513948, guid: 7374348f1c53840c29f1c8a3d7801e77, type: 3}
   - {fileID: 3225284729317661291, guid: 3b9b2d465eb864d1aa962a48cd6f03b7, type: 3}
-  dungeonSize:
-  - {x: 5, y: 5}
-  - {x: 4, y: 15}
-  floorTile: {fileID: 1549296128972244, guid: f2dfef3520652424485407efae051f38, type: 3}
 --- !u!4 &1045295332
 Transform:
   m_ObjectHideFlags: 0
