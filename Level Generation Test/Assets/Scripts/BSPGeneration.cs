@@ -10,6 +10,7 @@ public class BSPGeneration : MonoBehaviour
     public int minRoomSize, maxRoomSize;
     [Header("Number of zones per row/column")]
     public int amountOfZones = 1;
+    [Header("Prefab Size")]
 
     private Zone[,] zones;
 
@@ -17,6 +18,9 @@ public class BSPGeneration : MonoBehaviour
     private static List<Rect> corridorList = new List<Rect>();
     private static List<Room> roomList = new List<Room>();
     private static List<Zone> zoneList = new List<Zone>();
+
+    public GameObject[] dungeons;
+    public Vector2[] dungeonSize;
 
     public GameObject floorTile;
     private GameObject[,] floorPositions;
@@ -35,6 +39,10 @@ public class BSPGeneration : MonoBehaviour
         InitialiseZones(initialSection.rect);
         mapSize = initialSection.rect;
 
+        foreach (Room room in roomList)
+        {
+            GetNeighbours(room);
+        }
         // DrawRooms(initialSection);
     }
 
@@ -79,37 +87,61 @@ public class BSPGeneration : MonoBehaviour
             Gizmos.color = new Color(0, 0, 1, 0.5f);
             Gizmos.DrawCube(rect.center, rect.size);
         }
+
+        foreach (Room room in roomList)
+        {
+            for (int i = 0; i < room.neighbours.Count; i++)
+            {
+                Gizmos.color = Color.cyan;
+                Gizmos.DrawLine(room.rect.center, room.neighbours[i].rect.center);
+            }
+        }
+    }
+
+    public void GetNeighbours(Room room)
+    {
+        foreach (Room troom in roomList)
+        {
+            float dist = Vector3.Distance(troom.rect.center, room.rect.center);
+            if (dist < 25 && dist > 1)
+            {
+                room.neighbours.Add(troom);
+            }
+        }
     }
 
     public void DrawRooms(Section section)
     {
-        if (section == null)
+
+    }
+
+    /*public Vector2 RoomWidth(Rect rect)
+    {
+        Vector2 roomsize;
+
+        int sectionX = (int)rect.size.x;
+        int sectionY = (int)rect.size.y;
+
+        for (int i = 0; i < dungeonSize.Length; i++)
         {
-            return;
-        }
-        if (section.IsLeaf())
-        {
-            for (int i = (int)section.room.rect.x; i < section.room.rect.xMax; i++)
+            if (dungeonSize[i].x < sectionX && dungeonSize[i].x < sectionX)
             {
-                for (int j = (int)section.room.rect.y; j < section.room.rect.yMax; j++)
-                {
-                    GameObject instance = Instantiate(floorTile, new Vector3(i, j, 0f), Quaternion.identity) as GameObject;
-                    instance.transform.SetParent(transform);
-                }
+                roomsize = new Vector2(dungeonSize[i].x, dungeonSize[i].y);
+                return roomsize;
             }
         }
-        else
-        {
-            DrawRooms(section.left);
-            DrawRooms(section.right);
-        }
-    }
+        roomsize = new Vector2(1, 1);
+        return roomsize;
+    }*/
 
     public class Room
     {
         public Rect rect;
         public bool hasRandomised = false;
         public Color color;
+        public GameObject dungeon;
+
+        public List<Room> neighbours = new List<Room>();
 
         public Room(Rect trect, Color tcolor = default(Color))
         {
@@ -140,6 +172,7 @@ public class BSPGeneration : MonoBehaviour
         public Rect rect;
         public Room room = new Room(new Rect(-1, -1, 0, 0)); // i.e null
         public Rect corridor = new Rect(-1, -1, 0, 0); // i.e null
+        BSPGeneration bsp = new BSPGeneration();
 
         public int sectionID;
         public static int sectionIDCounter = 0;
@@ -163,6 +196,9 @@ public class BSPGeneration : MonoBehaviour
             }
             if (IsLeaf())
             {
+                //Vector2 roomDimensions = bsp.RoomWidth(rect);
+                //int roomWidth = (int)roomDimensions.x;
+                //int roomHeight = (int)roomDimensions.y;
                 int roomWidth = (int)Random.Range(rect.width / 2, rect.width - 2);
                 int roomHeight = (int)Random.Range(rect.height / 2, rect.height - 2);
                 int roomX = (int)Random.Range(1, rect.width - roomWidth - 1);
